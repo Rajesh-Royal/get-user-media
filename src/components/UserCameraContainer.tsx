@@ -13,18 +13,23 @@ const UserCameraContainer = () => {
     const [cameraPermissions, setCameraPermissions] = useState(false);
 
     const getUserCameraStream = () => {
-        /* Stream it to video element */
-        navigator.mediaDevices.getUserMedia(constraints).then(function success(stream) {
-            if (userStreamRef.current) {
-                let video = userStreamRef.current;
-                video.srcObject = stream;
-                video.play();
-            }
-        }).catch((error) => {
-            // todo - show correct error msg to user.
-            // error on permission denied - DOMException: Permission denied
-            setCameraPermissions(true);
-        })
+        /* Stream it to video element // mediaDevices only available over https */
+        if (navigator.mediaDevices) {
+            navigator.mediaDevices.getUserMedia(constraints).then(function success(stream) {
+                if (userStreamRef.current) {
+                    let video = userStreamRef.current;
+                    video.srcObject = stream;
+                    video.play();
+                }
+            }).catch((error) => {
+                // todo - show correct error msg to user.
+                // error on permission denied - DOMException: Permission denied
+                setCameraPermissions(true);
+            })
+        } else {
+            setStartStream(false);
+            alert("User media device not found");
+        }
     }
     const stopUserCameraStream = () => {
         if (userStreamRef.current?.srcObject) {
@@ -35,15 +40,16 @@ const UserCameraContainer = () => {
             (tracks as MediaStreamTrack[])[0].stop();
         }
     }
+
     useEffect(() => {
         if (startStream) {
-            getUserCameraStream();
+            getUserCameraStream()
         }
-    }, [userStreamRef, startStream])
+    }, [startStream, userStreamRef])
     return (
         <div>
             {!startStream ?
-                <button onClick={() => setStartStream((prev) => !prev)}>Start web camera</button>
+                <button onClick={() => setStartStream(true)}>Start web camera</button>
                 : <button onClick={() => {
                     stopUserCameraStream();
                     setStartStream((prev) => !prev)
